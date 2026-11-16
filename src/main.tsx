@@ -166,7 +166,7 @@ function App() {
   const soundRequest = useRef(0)
   const copy = wedding[lang]
   const names = `${copy.groom} & ${copy.bride}`
-  const publicUrl = import.meta.env.VITE_PUBLIC_URL || new URL(location.pathname, location.origin).href
+  const publicUrl = wedding.shareUrl
   const shareUrl = 'https://wa.me/?text=' + encodeURIComponent(`${copy.family} — ${copy.invite} ${names}. ${fullDate(lang)}.\n\n${publicUrl}`)
   const theme = {
     '--emerald': wedding.theme.emerald, '--ivory': wedding.theme.ivory, '--gold': wedding.theme.gold,

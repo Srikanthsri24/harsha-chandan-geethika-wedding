@@ -6,6 +6,7 @@ export const wedding = {
   timeZone: 'Asia/Kolkata',
   offset: '+05:30',
   mapsUrl: '',
+  shareUrl: 'https://srikanthsri24.github.io/harsha-chandan-geethika-wedding/',
   music: '/art/kalyanam-kamaniyam.mp3',
   photos: { groom: '', bride: '' },
   art: {
