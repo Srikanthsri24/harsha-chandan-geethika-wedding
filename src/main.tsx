@@ -236,9 +236,15 @@ function App() {
       setSound(true)
       setAudioError(false)
       remember('wedding-sound', 'on')
-    } catch {
-      if (request === soundRequest.current) setAudioError(true)
+    } catch (error) {
+      // Browsers can require a tap before playing audio with sound.
+      if (request === soundRequest.current && !(error instanceof DOMException && error.name === 'NotAllowedError')) {
+        setAudioError(true)
+      }
     }
+  }
+  function startMusicByDefault() {
+    if (!sound && read('wedding-sound') !== 'off') void playMusic()
   }
   function toggleMusic() {
     if (!sound) { void playMusic(); return }
@@ -251,9 +257,9 @@ function App() {
     remember('wedding-sound', 'off')
     setSound(false)
   }
-  function openInvitation(fromGesture = false) {
+  function openInvitation() {
     if (stage !== 'closed') return
-    if (fromGesture && read('wedding-sound') !== 'off' && !sound) void playMusic()
+    startMusicByDefault()
     window.scrollTo(0, 0)
     const finish = () => { setStage('open'); requestAnimationFrame(() => start.current?.focus({ preventScroll: true })) }
     if (!motionOK() || !cover.current || !content.current) { finish(); return }
@@ -360,7 +366,12 @@ function App() {
 
   const directions = <a className="action" href={mapLink} target="_blank" rel="noopener noreferrer"><Icon name="pin"/>{copy.directions}</a>
 
-  return <div className="app" style={theme}>
+  return <div className="app" style={theme} onClickCapture={event => {
+    const target = event.target
+    if (stage !== 'closed' && target instanceof Element && !target.closest('[data-music-toggle]')) {
+      startMusicByDefault()
+    }
+  }}>
     <div className="controls">
       <div className="languages" aria-label={lang === 'en' ? 'Language' : 'భాష'}>
         <button type="button" lang="en" aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button>
@@ -371,7 +382,7 @@ function App() {
         aria-label={autoScroll ? copy.pauseScroll : copy.resumeScroll}>
         <Icon name={autoScroll ? 'pause' : 'play'}/>
       </button>
-      {wedding.music && <button className="music" type="button" onClick={toggleMusic} title={sound ? copy.soundOff : copy.soundOn} aria-label={sound ? copy.soundOff : copy.soundOn}><Icon name={sound ? 'sound' : 'mute'}/></button>}
+      {wedding.music && <button className="music" type="button" data-music-toggle onClick={toggleMusic} title={sound ? copy.soundOff : copy.soundOn} aria-label={sound ? copy.soundOff : copy.soundOn}><Icon name={sound ? 'sound' : 'mute'}/></button>}
     </div>
     {wedding.music && <audio ref={audio} src={assetUrl(wedding.music)} preload="none" loop onError={() => { setSound(false); setAudioError(true) }}/>}
     {audioError && <p className="audio-error" role="status">{copy.audioError}</p>}
@@ -409,7 +420,7 @@ function App() {
           <Icon name="arrow" size={14}/>
         </div>
       </div>
-      <button className="cover-trigger" ref={openButton} type="button" aria-label={copy.open} disabled={stage === 'opening'} onClick={() => openInvitation(true)}/>
+      <button className="cover-trigger" ref={openButton} type="button" aria-label={copy.open} disabled={stage === 'opening'} onClick={openInvitation}/>
       {!loaded && stage === 'closed' && <div className="loader" aria-busy="true"><Monogram/></div>}
     </div>}
     <main ref={invitation} inert={stage !== 'open'} className={stage === 'closed' ? 'closed' : ''}>
