@@ -4,11 +4,13 @@ import { wedding } from './src/wedding.ts'
 
 export default defineConfig(({ mode }) => {
   const url = loadEnv(mode, '.', 'VITE_').VITE_PUBLIC_URL?.replace(/\/$/, '')
+  const base = url ? new URL(url).pathname.replace(/\/$/, '') + '/' : '/'
   const names = `${wedding.en.groom} & ${wedding.en.bride}`
   const date = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(wedding.date))
   const description = `${wedding.en.family} invites you to the wedding of ${names} on ${date}.`
   const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
   return {
+    base,
     plugins: [tailwindcss(), {
       name: 'wedding-metadata',
       transformIndexHtml(html) {
@@ -21,9 +23,9 @@ export default defineConfig(({ mode }) => {
           `<meta property="og:image" content="${escape((url ?? '') + wedding.art.social)}">`,
           '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">',
           '<meta name="twitter:card" content="summary_large_image">',
-          url ? `<meta property="og:url" content="${escape(url)}"><link rel="canonical" href="${escape(url)}">` : '',
-          `<link rel="preload" as="image" href="${wedding.art.envelopeMobile}" media="(max-width: 640px)">`,
-          `<link rel="preload" as="image" href="${wedding.art.envelope}" media="(min-width: 641px)">`,
+          url ? `<meta property="og:url" content="${escape(url + '/')}"><link rel="canonical" href="${escape(url + '/')}">` : '',
+          `<link rel="preload" as="image" href="${base + wedding.art.envelopeMobile.slice(1)}" media="(max-width: 640px)">`,
+          `<link rel="preload" as="image" href="${base + wedding.art.envelope.slice(1)}" media="(min-width: 641px)">`,
         ].join('\n'))
       },
     }],

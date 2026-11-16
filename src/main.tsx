@@ -17,6 +17,9 @@ type Language = 'en' | 'te'
 type Copy = typeof wedding.en
 type Stage = 'closed' | 'opening' | 'open'
 const weddingInstant = new Date(`${wedding.date}T${wedding.muhurtham}:00${wedding.offset}`)
+const assetUrl = (path: string) => path.startsWith('/') && !path.startsWith('//')
+  ? import.meta.env.BASE_URL + path.slice(1)
+  : path
 const motionOK = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
 const read = (key: string) => { try { return sessionStorage.getItem(key) } catch { return null } }
 const remember = (key: string, value: string) => { try { sessionStorage.setItem(key, value) } catch { /* Optional in private browsing. */ } }
@@ -164,18 +167,18 @@ function App() {
   const shareUrl = 'https://wa.me/?text=' + encodeURIComponent(`${copy.family} — ${copy.invite} ${names}. ${fullDate(lang)}.\n\n${publicUrl}`)
   const theme = {
     '--emerald': wedding.theme.emerald, '--ivory': wedding.theme.ivory, '--gold': wedding.theme.gold,
-    '--floral-art': `url("${wedding.art.flowers}")`,
-    '--welcome-art': `url("${wedding.art.welcome}")`,
-    '--burgundy': wedding.theme.burgundy, '--curtain-image': `url("${wedding.art.curtains}")`, '--cover': `url("${wedding.art.cover}")`, '--envelope': `url("${wedding.art.envelope}")`, '--mobile-envelope': `url("${wedding.art.envelopeMobile}")`,
+    '--floral-art': `url("${assetUrl(wedding.art.flowers)}")`,
+    '--welcome-art': `url("${assetUrl(wedding.art.welcome)}")`,
+    '--burgundy': wedding.theme.burgundy, '--curtain-image': `url("${assetUrl(wedding.art.curtains)}")`, '--cover': `url("${assetUrl(wedding.art.cover)}")`, '--envelope': `url("${assetUrl(wedding.art.envelope)}")`, '--mobile-envelope': `url("${assetUrl(wedding.art.envelopeMobile)}")`,
   } as CSSProperties
 
   useEffect(() => { document.documentElement.lang = lang; remember('wedding-lang', lang) }, [lang])
   useEffect(() => {
     const image = new Image()
     const silk = new Image()
-    silk.src = wedding.art.curtains
+    silk.src = assetUrl(wedding.art.curtains)
     image.onload = image.onerror = () => setLoaded(true)
-    image.src = matchMedia('(max-width: 640px)').matches ? wedding.art.envelopeMobile : wedding.art.envelope
+    image.src = matchMedia('(max-width: 640px)').matches ? assetUrl(wedding.art.envelopeMobile) : assetUrl(wedding.art.envelope)
     const fallback = window.setTimeout(() => setLoaded(true), 1800)
     return () => { clearTimeout(fallback); image.onload = image.onerror = null }
   }, [])
@@ -313,7 +316,7 @@ function App() {
       </div>
       {wedding.music && <button className="music" type="button" onClick={toggleMusic} title={sound ? copy.soundOff : copy.soundOn} aria-label={sound ? copy.soundOff : copy.soundOn}><Icon name={sound ? 'sound' : 'mute'}/></button>}
     </div>
-    {wedding.music && <audio ref={audio} src={wedding.music} preload="none" loop onError={() => { setSound(false); setAudioError(true) }}/>}
+    {wedding.music && <audio ref={audio} src={assetUrl(wedding.music)} preload="none" loop onError={() => { setSound(false); setAudioError(true) }}/>}
     {audioError && <p className="audio-error" role="status">{copy.audioError}</p>}
     {stage !== 'open' && <div className="gate" ref={cover} aria-hidden={stage === 'opening'}>
       <div className="overture" aria-hidden="true">
@@ -366,7 +369,7 @@ function App() {
             <p className="eyebrow"><Words>{copy.invocation}</Words></p>
             <div className="deity-stage">
               <div className="deity-halo" aria-hidden="true"/>
-              <Art src={wedding.art.ganesha} className="ganesha"/>
+              <Art src={assetUrl(wedding.art.ganesha)} className="ganesha"/>
               <div className="diya-left"><Diya/></div><div className="diya-right"><Diya/></div>
             </div>
             <Flourish/>
@@ -376,15 +379,15 @@ function App() {
         </section>
         <section id="couple" className="couple paper">
           <DriftingPetals/>
-          <Art src={wedding.art.flowers} className="couple-art"/>
+          <Art src={assetUrl(wedding.art.flowers)} className="couple-art"/>
           <div className="couple-inner reveal">
             <Monogram/>
             <p className="eyebrow">{copy.family}</p>
             <p className="couple-invite"><Words>{copy.invite}</Words></p>
             <Flourish/>
-            {wedding.photos.groom && <Art src={wedding.photos.groom} className="portrait"/>}
+            {wedding.photos.groom && <Art src={assetUrl(wedding.photos.groom)} className="portrait"/>}
             <h2><Words>{copy.groom}</Words></h2><div className="weds-divider"><span>{copy.weds}</span></div>
-            {wedding.photos.bride && <Art src={wedding.photos.bride} className="portrait"/>}
+            {wedding.photos.bride && <Art src={assetUrl(wedding.photos.bride)} className="portrait"/>}
             <h2><Words>{copy.bride}</Words></h2><p className="alternate">({copy.alternate})</p>
             <Flourish/>
           </div>
@@ -437,7 +440,7 @@ function App() {
           </section>
           <Countdown copy={copy}/>
           <section className="split ceremony paper">
-            <Art src={wedding.art.ceremony} className="split-art" loading={heart ? "eager" : "lazy"}/>
+            <Art src={assetUrl(wedding.art.ceremony)} className="split-art" loading={heart ? "eager" : "lazy"}/>
             <div className="split-copy reveal">
               <p className="eyebrow">{copy.ceremonyLabel}</p><h2>{copy.ceremony}</h2><Flourish/>
               <div className="ceremony-datetime">
@@ -448,7 +451,7 @@ function App() {
           </section>
           <section className="split dinner">
             <svg className="split-art dinner-illustration" viewBox="0 0 764 508" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <image href={wedding.art.dinner} width="764" height="508"/>
+              <image href={assetUrl(wedding.art.dinner)} width="764" height="508"/>
               <path className="serving-stream" d="M359 299c7 8 9 19 11 28" fill="none" stroke="#ecad52" strokeWidth="4" strokeLinecap="round" pathLength="1"/>
               <circle className="serving-drop" cx="365" cy="304" r="3" fill="#f3b65c"/>
               <g className="serving-steam" fill="none" stroke="#fff7de" strokeWidth="2" strokeLinecap="round"><path d="M445 270q-6-9 2-17t-1-16"/><path d="M461 265q-7-10 2-20t0-17"/><path d="M477 269q-7-9 0-17t2-16"/></g>
@@ -459,7 +462,7 @@ function App() {
             </div>
           </section>
           <section className="venue paper">
-            <Art src={wedding.art.village} className="venue-art" loading={heart ? "eager" : "lazy"}/>
+            <Art src={assetUrl(wedding.art.village)} className="venue-art" loading={heart ? "eager" : "lazy"}/>
             <div className="village-light" aria-hidden="true"/>
             <div className="venue-frame reveal">
               <VenueOrnament/><p className="eyebrow">{copy.venue}</p><h2>{copy.place}</h2>
@@ -474,7 +477,7 @@ function App() {
               <Monogram/><h2><Words>{copy.families}</Words></h2><Flourish/>
               <div className="family-grid">
                 <article className="family-panel">
-                  <Art src={wedding.art.groomFamily} className="family-portrait"/>
+                  <Art src={assetUrl(wedding.art.groomFamily)} className="family-portrait"/>
                   <div className="family-caption">
                     <h3 className="eyebrow">{copy.groomFamily}</h3>
                     <p>{copy.groomParents}</p>
@@ -482,7 +485,7 @@ function App() {
                   </div>
                 </article>
                 <article className="family-panel">
-                  <Art src={wedding.art.brideFamily} className="family-portrait"/>
+                  <Art src={assetUrl(wedding.art.brideFamily)} className="family-portrait"/>
                   <div className="family-caption">
                     <h3 className="eyebrow">{copy.brideFamily}</h3>
                     <p>{copy.brideParents}</p>
@@ -510,7 +513,7 @@ function App() {
             <canvas className="closing-fireworks" aria-hidden="true"/>
             <DriftingPetals count={16}/>
             <div className="closing-composition">
-              <Art src={wedding.art.namasteLeft} className="closing-namaste namaste-left"/>
+              <Art src={assetUrl(wedding.art.namasteLeft)} className="closing-namaste namaste-left"/>
               <div className="reveal closing-copy">
                 <Monogram/><h2><Words>{copy.closing}</Words></h2><p><Words>{copy.farewell}</Words></p><Flourish/>
                 <p className="signature">{names}</p><p className="eyebrow">{copy.family}</p>
@@ -520,7 +523,7 @@ function App() {
                   {directions}
                 </div>
               </div>
-              <Art src={wedding.art.namasteRight} className="closing-namaste namaste-right"/>
+              <Art src={assetUrl(wedding.art.namasteRight)} className="closing-namaste namaste-right"/>
             </div>
           </footer>
         </div>
