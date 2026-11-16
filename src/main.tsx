@@ -319,7 +319,9 @@ function App() {
     const chapters = Array.from(invitation.current?.querySelectorAll<HTMLElement>('section, footer') ?? [])
       .filter(chapter => chapter.getClientRects().length > 0)
     const next = chapters.findIndex(chapter => chapter.getBoundingClientRect().top > 18)
-    const current = next === -1 ? chapters.length - 1 : next - 1
+    // The last visible chapter may be too short to reach the top of the viewport.
+    const atBottom = document.documentElement.scrollHeight - innerHeight - window.scrollY <= 2
+    const current = next === -1 || atBottom ? chapters.length - 1 : next - 1
     const chapter = chapters[current]
     if (!chapter) return
 
