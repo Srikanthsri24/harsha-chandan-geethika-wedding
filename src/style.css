@@ -547,3 +547,14 @@ html[lang="te"] .ceremony-datetime time {
     margin-bottom: 10px;
   }
 }
+
+.production-credit {
+  position: relative;
+  z-index: 3;
+  align-self: end;
+  padding-top: 26px;
+  color: #f1d7ab;
+  font-size: clamp(.72rem, 1.45vw, .86rem);
+  letter-spacing: .04em;
+  text-wrap: balance;
+}

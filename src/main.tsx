@@ -1,4 +1,4 @@
-import React, { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
+import React, { type CSSProperties, type ReactNode, useEffect, useEffectEvent, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import gsap from 'gsap'
 import '@fontsource-variable/cormorant-garamond'
@@ -45,6 +45,8 @@ function Words({ children }: { children: string }) {
 
 function Icon({ name, size = 19 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
+    pause: <path d="M9 5v14m6-14v14"/>,
+    play: <path d="m8 5 12 7-12 7z"/>,
     heart: <path d="M12 21s-8.5-5-9.5-10.2C1.4 5.3 8.4 2 12 7c3.6-5 10.6-1.7 9.5 3.8C20.5 16 12 21 12 21Z"/>,
     arrow: <path d="M12 4v15m-5-5 5 5 5-5"/>,
     pin: <><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>,
@@ -149,6 +151,7 @@ function App() {
   const [lang, setLang] = useState<Language>(() => read('wedding-lang') === 'te' ? 'te' : 'en')
   const [stage, setStage] = useState<Stage>('closed')
   const [heart, setHeart] = useState(false)
+  const [autoScroll, setAutoScroll] = useState(motionOK)
   const [loaded, setLoaded] = useState(false)
   const [sound, setSound] = useState(false)
   const [audioError, setAudioError] = useState(false)
@@ -248,9 +251,9 @@ function App() {
     remember('wedding-sound', 'off')
     setSound(false)
   }
-  function openInvitation() {
+  function openInvitation(fromGesture = false) {
     if (stage !== 'closed') return
-    if (read('wedding-sound') !== 'off' && !sound) void playMusic()
+    if (fromGesture && read('wedding-sound') !== 'off' && !sound) void playMusic()
     window.scrollTo(0, 0)
     const finish = () => { setStage('open'); requestAnimationFrame(() => start.current?.focus({ preventScroll: true })) }
     if (!motionOK() || !cover.current || !content.current) { finish(); return }
@@ -306,6 +309,53 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
     requestAnimationFrame(() => openButton.current?.focus({ preventScroll: true }))
   }
+  const advanceInvitation = useEffectEvent(() => {
+    if (stage === 'closed') {
+      openInvitation()
+      return
+    }
+    if (stage !== 'open') return
+
+    const chapters = Array.from(invitation.current?.querySelectorAll<HTMLElement>('section, footer') ?? [])
+      .filter(chapter => chapter.getClientRects().length > 0)
+    const next = chapters.findIndex(chapter => chapter.getBoundingClientRect().top > 18)
+    const current = next === -1 ? chapters.length - 1 : next - 1
+    const chapter = chapters[current]
+    if (!chapter) return
+
+    const behavior = motionOK() ? 'smooth' : 'instant'
+    const remaining = chapter.getBoundingClientRect().bottom - innerHeight
+    if (remaining > 24) {
+      window.scrollBy({ top: Math.min(remaining, innerHeight * .76), behavior })
+    } else if (chapter.classList.contains('heart-scene') && !heart) {
+      setHeart(true)
+    } else {
+      chapters[current + 1]?.scrollIntoView({ block: 'start', behavior })
+    }
+  })
+
+  useEffect(() => {
+    if (!autoScroll || !loaded || stage === 'opening') return
+    let timer: number
+    const interactionEvents = ['pointerdown', 'pointerup', 'wheel', 'touchmove', 'touchend', 'keydown', 'focusin'] as const
+    const restart = () => {
+      window.clearTimeout(timer)
+      if (!document.hidden) timer = window.setTimeout(tick, 5000)
+    }
+    function tick() {
+      advanceInvitation()
+      restart()
+    }
+    for (const event of interactionEvents) window.addEventListener(event, restart, { passive: true, capture: true })
+    document.addEventListener('visibilitychange', restart)
+    restart()
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', restart)
+      for (const event of interactionEvents) window.removeEventListener(event, restart, true)
+    }
+  }, [autoScroll, stage, loaded])
+
   const directions = <a className="action" href={mapLink} target="_blank" rel="noopener noreferrer"><Icon name="pin"/>{copy.directions}</a>
 
   return <div className="app" style={theme}>
@@ -314,6 +364,11 @@ function App() {
         <button type="button" lang="en" aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button>
         <button type="button" lang="te" aria-pressed={lang === 'te'} onClick={() => setLang('te')}>తెలుగు</button>
       </div>
+      <button className="music" type="button" onClick={() => setAutoScroll(value => !value)}
+        title={autoScroll ? copy.pauseScroll : copy.resumeScroll}
+        aria-label={autoScroll ? copy.pauseScroll : copy.resumeScroll}>
+        <Icon name={autoScroll ? 'pause' : 'play'}/>
+      </button>
       {wedding.music && <button className="music" type="button" onClick={toggleMusic} title={sound ? copy.soundOff : copy.soundOn} aria-label={sound ? copy.soundOff : copy.soundOn}><Icon name={sound ? 'sound' : 'mute'}/></button>}
     </div>
     {wedding.music && <audio ref={audio} src={assetUrl(wedding.music)} preload="none" loop onError={() => { setSound(false); setAudioError(true) }}/>}
@@ -352,7 +407,7 @@ function App() {
           <Icon name="arrow" size={14}/>
         </div>
       </div>
-      <button className="cover-trigger" ref={openButton} type="button" aria-label={copy.open} disabled={stage === 'opening'} onClick={openInvitation}/>
+      <button className="cover-trigger" ref={openButton} type="button" aria-label={copy.open} disabled={stage === 'opening'} onClick={() => openInvitation(true)}/>
       {!loaded && stage === 'closed' && <div className="loader" aria-busy="true"><Monogram/></div>}
     </div>}
     <main ref={invitation} inert={stage !== 'open'} className={stage === 'closed' ? 'closed' : ''}>
@@ -525,6 +580,7 @@ function App() {
               </div>
               <Art src={assetUrl(wedding.art.namasteRight)} className="closing-namaste namaste-right"/>
             </div>
+            <p className="production-credit">Powered By VisionariesAI Labs Private Limited</p>
           </footer>
         </div>
       </div>

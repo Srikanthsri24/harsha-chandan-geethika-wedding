@@ -48,6 +48,7 @@ export const wedding = {
     closing: 'Your presence is our greatest blessing',
     farewell: 'We look forward to celebrating this beautiful occasion with you.',
     replay: 'View invitation again', share: 'Share invitation',
+    pauseScroll: 'Pause automatic scrolling', resumeScroll: 'Resume automatic scrolling',
     soundOn: 'Play music', soundOff: 'Mute music', audioError: 'Music is unavailable.',
   },
   te: {
@@ -82,6 +83,7 @@ export const wedding = {
     closing: 'మీ రాకే మాకు గొప్ప ఆశీర్వాదం',
     farewell: 'ఈ శుభవేళ మీతో కలిసి వేడుక చేసుకోవాలని ఎదురుచూస్తున్నాము.',
     replay: 'ఆహ్వానాన్ని మళ్లీ తెరవండి', share: 'ఆహ్వానాన్ని పంచుకోండి',
+    pauseScroll: 'ఆటో స్క్రోల్ ఆపండి', resumeScroll: 'ఆటో స్క్రోల్ కొనసాగించండి',
     soundOn: 'సంగీతాన్ని ప్రారంభించండి', soundOff: 'సంగీతాన్ని ఆపండి', audioError: 'సంగీతం అందుబాటులో లేదు.',
   },
 }
